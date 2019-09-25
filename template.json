@@ -66,7 +66,7 @@
                 "displayName": "testingtodelete",
                 "customParameterValues": {},
                 "api": {
-                    "id": "[concat('/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/', parameters('connections_azureblob_name'))]"
+                    "id": "[concat('/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob]"
                 }
             }
         },
