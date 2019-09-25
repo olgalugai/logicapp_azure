@@ -3,19 +3,19 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "workflows_test_name": {
-            "value": null
+            "value": "test_account"
         },
         "connections_azureblob_name": {
-            "value": null
+            "value": "api"
         },
         "connections_azureblob_1_name": {
-            "value": null
+            "value": "api1"
         },
         "connections_azureblob_2_name": {
-            "value": null
+            "value": "api2"
         },
         "storageAccounts_logicappstest_name": {
-            "value": null
+            "value": "logicapp_armtest"
         }
     }
 }
