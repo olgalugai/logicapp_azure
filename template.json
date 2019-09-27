@@ -2,24 +2,16 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "workflows_test_name": {
-            "defaultValue": "test",
+        "workflows_arm_name": {
+            "defaultValue": "arm",
             "type": "String"
         },
         "connections_azureblob_name": {
             "defaultValue": "azureblob",
             "type": "String"
         },
-        "connections_azureblob_1_name": {
-            "defaultValue": "azureblob-1",
-            "type": "String"
-        },
-        "connections_azureblob_2_name": {
-            "defaultValue": "azureblob-2",
-            "type": "String"
-        },
-        "storageAccounts_logicappstest_name": {
-            "defaultValue": "logicappstest",
+        "storageAccounts_armtest_name": {
+            "defaultValue": "armtestlogicapp",
             "type": "String"
         }
     },
@@ -28,16 +20,16 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2019-04-01",
-            "name": "[parameters('storageAccounts_logicappstest_name')]",
-            "location": "uksouth",
+            "name": "[parameters('storageAccounts_armtest_name')]",
+            "location": "ukwest",
             "sku": {
-                "name": "Standard_LRS",
+                "name": "Standard_RAGRS",
                 "tier": "Standard"
             },
             "kind": "StorageV2",
             "properties": {
                 "networkAcls": {
-                    "bypass": "Azure Services",
+                    "bypass": "AzureServices",
                     "virtualNetworkRules": [],
                     "ipRules": [],
                     "defaultAction": "Allow"
@@ -63,63 +55,21 @@
             "name": "[parameters('connections_azureblob_name')]",
             "location": "uksouth",
             "properties": {
-                "displayName": "testingtodelete",
+                "displayName": "connect-to-armtest",
                 "customParameterValues": {},
                 "api": {
-                    "id": "[concat('/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob]"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Web/connections",
-            "apiVersion": "2016-06-01",
-            "name": "[parameters('connections_azureblob_1_name')]",
-            "location": "uksouth",
-            "properties": {
-                "displayName": "logicapptestconnection",
-                "customParameterValues": {},
-                "api": {
-                    "id": "/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Web/connections",
-            "apiVersion": "2016-06-01",
-            "name": "[parameters('connections_azureblob_2_name')]",
-            "location": "uksouth",
-            "properties": {
-                "displayName": "imgtest",
-                "customParameterValues": {},
-                "api": {
-                    "id": "/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/blobServices",
-            "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_logicappstest_name'), '/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_logicappstest_name'))]"
-            ],
-            "properties": {
-                "cors": {
-                    "corsRules": []
-                },
-                "deleteRetentionPolicy": {
-                    "enabled": false
+                    // enter the subscription id in the path below - after subscriptions section//
+                    "id": "[concat('/subscriptions/       /providers/Microsoft.Web/locations/uksouth/managedApis/', parameters('connections_azureblob_name'))]"
                 }
             }
         },
         {
             "type": "Microsoft.Logic/workflows",
             "apiVersion": "2017-07-01",
-            "name": "[parameters('workflows_test_name')]",
+            "name": "[parameters('workflows_arm_name')]",
             "location": "uksouth",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_name'))]",
-                "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_2_name'))]"
+                "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_name'))]"
             ],
             "properties": {
                 "state": "Enabled",
@@ -136,10 +86,10 @@
                         "Recurrence": {
                             "recurrence": {
                                 "frequency": "Day",
-                                "interval": 1,
-                                "timeZone": "GMT Standard Time"
+                                "interval": 1
                             },
-                            "type": "Recurrence"
+                            "type": "Recurrence",
+                            "inputs": {}
                         }
                     },
                     "actions": {
@@ -164,7 +114,7 @@
                             "type": "Query",
                             "inputs": {
                                 "from": "@body('List_blobs_2')?['value']",
-                                "where": "@less(item()?['LastModified'], addMinutes(utcNow(), -40))"
+                                "where": "@less(item()?['LastModified'], addMinutes(utcNow(), -30))"
                             }
                         },
                         "For_each": {
@@ -191,10 +141,10 @@
                             },
                             "type": "Foreach"
                         },
-                        "For_each2": {
+                        "For_each_2": {
                             "foreach": "@body('Filter_array_2')",
                             "actions": {
-                                "Delete_blob_2": {
+                                "Delete_blob_3": {
                                     "runAfter": {},
                                     "type": "ApiConnection",
                                     "inputs": {
@@ -204,7 +154,7 @@
                                             }
                                         },
                                         "method": "delete",
-                                        "path": "/datasets/default/files/@{encodeURIComponent(encodeURIComponent(items('For_each2')?['Path']))}"
+                                        "path": "/datasets/default/files/@{encodeURIComponent(encodeURIComponent('@items(''For_each_2'')?[''Path'']'))}"
                                     }
                                 }
                             },
@@ -218,7 +168,7 @@
                         "List_blobs": {
                             "runAfter": {},
                             "metadata": {
-                                "JTJmdGVzdDE=": "[concat('/', parameters('workflows_test_name'), '1')]"
+                                "JTJmdGVzdDE=": "/test1"
                             },
                             "type": "ApiConnection",
                             "inputs": {
@@ -238,7 +188,7 @@
                         "List_blobs_2": {
                             "runAfter": {},
                             "metadata": {
-                                "JTJmdGVzdDI=": "[concat('/', parameters('workflows_test_name'), '2')]"
+                                "JTJmdGVzdDI=": "/test2"
                             },
                             "type": "ApiConnection",
                             "inputs": {
@@ -254,26 +204,6 @@
                                     "useFlatListing": false
                                 }
                             }
-                        },
-                        "List_blobs_3": {
-                            "runAfter": {},
-                            "metadata": {
-                                "JTJmaW1hZ2Vz": "/images"
-                            },
-                            "type": "ApiConnection",
-                            "inputs": {
-                                "host": {
-                                    "connection": {
-                                        "name": "@parameters('$connections')['azureblob_1']['connectionId']"
-                                    }
-                                },
-                                "method": "get",
-                                "path": "/datasets/default/foldersV2/@{encodeURIComponent(encodeURIComponent('JTJmaW1hZ2Vz'))}",
-                                "queries": {
-                                    "nextPageMarker": "",
-                                    "useFlatListing": false
-                                }
-                            }
                         }
                     },
                     "outputs": {}
@@ -284,12 +214,8 @@
                             "azureblob": {
                                 "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_name'))]",
                                 "connectionName": "azureblob",
-                                "id": "/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob"
-                            },
-                            "azureblob_1": {
-                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_azureblob_2_name'))]",
-                                "connectionName": "azureblob-2",
-                                "id": "/subscriptions/088de0df-dacc-46b9-8e67-f92a2004e935/providers/Microsoft.Web/locations/uksouth/managedApis/azureblob"
+                                  // enter the subscription id in the path below - after subscriptions section//
+                                "id": "/subscriptions/  /providers/Microsoft.Web/locations/uksouth/managedApis/azureblob"
                             }
                         }
                     }
@@ -297,12 +223,28 @@
             }
         },
         {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2019-04-01",
+            "name": "[concat(parameters('storageAccounts_armtest_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_armtest_name'))]"
+            ],
+            "properties": {
+                "cors": {
+                    "corsRules": []
+                },
+                "deleteRetentionPolicy": {
+                    "enabled": false
+                }
+            }
+        },
+        {
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_logicappstest_name'), '/default/test1')]",
+            "name": "[concat(parameters('storageAccounts_armtest_name'), '/default/test1')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_logicappstest_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_logicappstest_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_armtest_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_armtest_name'))]"
             ],
             "properties": {
                 "publicAccess": "None"
@@ -311,22 +253,10 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_logicappstest_name'), '/default/test2')]",
+            "name": "[concat(parameters('storageAccounts_armtest_name'), '/default/test2')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_logicappstest_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_logicappstest_name'))]"
-            ],
-            "properties": {
-                "publicAccess": "None"
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
-            "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_logicappstest_name'), '/default/test3')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_logicappstest_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_logicappstest_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_armtest_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_armtest_name'))]"
             ],
             "properties": {
                 "publicAccess": "None"
