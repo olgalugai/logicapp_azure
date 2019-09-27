@@ -6,7 +6,7 @@ File template.json is used to deploy:
 - API connection to the storage account
 - Logic App
 
-# Logic App identifies the files older than 30 minutes in each container and deletes it.
+# Logic App to identify the files older than 30 minutes in each container and delete them
 
 An app is set to run every day which can be changed in Recurrence section of the workflow block.
 
